@@ -18,21 +18,27 @@ if (!POLLINATIONS_KEY) {
 }
 
 // ---------- CHAT ----------
-// Uses the free, keyless legacy endpoint (text.pollinations.ai) — no pollen balance required.
+// Uses the simple GET endpoint (text.pollinations.ai/{prompt}) — a different
+// route from the OpenAI-style POST endpoint, avoids account/key association issues.
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages, model = "openai-fast" } = req.body;
+    const { messages, model = "openai" } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "messages array is required" });
     }
 
-    const response = await fetch("https://text.pollinations.ai/openai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model, messages }),
-    });
+    // Build a single prompt string from the conversation history
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
+    const conversationText = messages
+      .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
+      .join("\n");
 
+    const prompt = conversationText || lastUserMessage?.content || "";
+    const encodedPrompt = encodeURIComponent(prompt);
+    const url = `https://text.pollinations.ai/${encodedPrompt}?model=${model}`;
+
+    const response = await fetch(url);
     const rawText = await response.text();
     console.log("Pollinations raw response:", rawText);
 
@@ -41,15 +47,8 @@ app.post("/api/chat", async (req, res) => {
       return res.status(response.status).json({ error: rawText });
     }
 
-    let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch (parseErr) {
-      // API didn't return JSON — treat the raw text as the reply
-      return res.json({ choices: [{ message: { content: rawText } }] });
-    }
-
-    res.json(data);
+    // This endpoint returns plain text, not JSON
+    res.json({ choices: [{ message: { content: rawText } }] });
   } catch (err) {
     console.error("Chat error:", err);
     res.status(500).json({ error: "Chat generation failed: " + err.message });
