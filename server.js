@@ -37,14 +37,25 @@ app.post("/api/chat", async (req, res) => {
 
     if (!response.ok) {
       const errText = await response.text();
+      console.error("Pollinations chat API error:", response.status, errText);
       return res.status(response.status).json({ error: errText });
     }
 
-    const data = await response.json();
+    const rawText = await response.text();
+    console.log("Pollinations raw response:", rawText);
+
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (parseErr) {
+      // API didn't return JSON — treat the raw text as the reply
+      return res.json({ choices: [{ message: { content: rawText } }] });
+    }
+
     res.json(data);
   } catch (err) {
     console.error("Chat error:", err);
-    res.status(500).json({ error: "Chat generation failed" });
+    res.status(500).json({ error: "Chat generation failed: " + err.message });
   }
 });
 
