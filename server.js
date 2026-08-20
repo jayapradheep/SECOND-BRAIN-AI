@@ -18,31 +18,28 @@ if (!POLLINATIONS_KEY) {
 }
 
 // ---------- CHAT ----------
+// Uses the free, keyless legacy endpoint (text.pollinations.ai) — no pollen balance required.
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages, model = "openai" } = req.body;
+    const { messages, model = "openai-fast" } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "messages array is required" });
     }
 
-    const response = await fetch(`${BASE_URL}/v1/chat/completions`, {
+    const response = await fetch("https://text.pollinations.ai/openai", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${POLLINATIONS_KEY}`,
-      },
-      body: JSON.stringify({ model, messages }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model, messages, referrer: "second-brain-ai" }),
     });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Pollinations chat API error:", response.status, errText);
-      return res.status(response.status).json({ error: errText });
-    }
 
     const rawText = await response.text();
     console.log("Pollinations raw response:", rawText);
+
+    if (!response.ok) {
+      console.error("Pollinations chat API error:", response.status, rawText);
+      return res.status(response.status).json({ error: rawText });
+    }
 
     let data;
     try {
@@ -60,6 +57,7 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // ---------- IMAGE ----------
+// Uses the free, keyless image endpoint (image.pollinations.ai) — Flux model, unlimited.
 app.post("/api/image", async (req, res) => {
   try {
     const { prompt, model = "flux", width = 1024, height = 1024 } = req.body;
@@ -69,11 +67,9 @@ app.post("/api/image", async (req, res) => {
     }
 
     const encodedPrompt = encodeURIComponent(prompt);
-    const url = `${BASE_URL}/image/${encodedPrompt}?model=${model}&width=${width}&height=${height}`;
+    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=${model}&width=${width}&height=${height}&nologo=true`;
 
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${POLLINATIONS_KEY}` },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       const errText = await response.text();
@@ -90,6 +86,8 @@ app.post("/api/image", async (req, res) => {
 });
 
 // ---------- VIDEO ----------
+// Note: video generation still uses the paid gen.pollinations.ai endpoint and may
+// require pollen balance on your account, unlike chat/image above.
 app.post("/api/video", async (req, res) => {
   try {
     const { prompt, model = "seedance" } = req.body;
