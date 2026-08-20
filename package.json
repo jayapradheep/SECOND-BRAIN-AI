@@ -1,0 +1,16 @@
+{
+  "name": "second-brain-ai",
+  "version": "1.0.0",
+  "description": "SECOND BRAIN AI — Chat, Image and Video generation backend using Pollinations.ai",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "node-fetch": "^3.3.2"
+  }
+}
