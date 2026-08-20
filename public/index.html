@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SECOND BRAIN AI</title>
-<style>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SECOND BRAIN AI</title>
+  <style>
   :root {
     --bg: #0f1115;
     --panel: #171a21;
@@ -105,58 +105,45 @@
 
   .status { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
 </style>
-</head>
-<body>
-
-<header>
-  <h1>🧠 SECOND BRAIN AI</h1>
-  <p>Chat · Image · Video — your personal AI companion</p>
-</header>
-
-<div class="tabs">
-  <button class="tab-btn active" data-tab="chat">💬 Chat</button>
-  <button class="tab-btn" data-tab="image">🖼️ Image</button>
-  <button class="tab-btn" data-tab="video">🎬 Video</button>
-</div>
-
-<!-- CHAT PANEL -->
-<div class="panel active" id="chat">
-  <div class="output chat-log" id="chatLog"></div>
-  <textarea id="chatInput" rows="2" placeholder="Type your message..."></textarea>
-  <button class="action" id="chatBtn">Send</button>
-  <div class="status" id="chatStatus"></div>
-</div>
-
-<!-- IMAGE PANEL -->
-<div class="panel" id="image">
-  <textarea id="imagePrompt" rows="2" placeholder="Describe the image you want..."></textarea>
-  <div class="row">
-    <select id="imageModel">
-      <option value="flux">Flux</option>
-      <option value="zimage">Zimage</option>
-    </select>
+ </head>
+ <body>
+  <header>
+   <h1>🧠 SECOND BRAIN AI</h1>
+   <p>Chat · Image · Video — your personal AI companion</p>
+  </header>
+  <div class="tabs">
+   <button class="tab-btn active" data-tab="chat">💬 Chat</button>
+   <button class="tab-btn" data-tab="image">🖼️ Image</button>
+   <button class="tab-btn" data-tab="video">🎬 Video</button>
   </div>
-  <button class="action" id="imageBtn">Generate Image</button>
-  <div class="status" id="imageStatus"></div>
-  <div class="output" id="imageOutput"></div>
-</div>
-
-<!-- VIDEO PANEL -->
-<div class="panel" id="video">
-  <textarea id="videoPrompt" rows="2" placeholder="Describe the video you want..."></textarea>
-  <div class="row">
-    <select id="videoModel">
-      <option value="seedance">Seedance</option>
-      <option value="wan-fast">Wan-Fast</option>
-      <option value="veo">Veo (alpha)</option>
-    </select>
+  <!-- CHAT PANEL -->
+  <div class="panel active" id="chat">
+   <div class="output chat-log" id="chatLog"></div>
+   <textarea id="chatInput" rows="2" placeholder="Type your message..."></textarea>
+   <button class="action" id="chatBtn">Send</button>
+   <div class="status" id="chatStatus"></div>
   </div>
-  <button class="action" id="videoBtn">Generate Video</button>
-  <div class="status" id="videoStatus">Video generation can take a while — please be patient.</div>
-  <div class="output" id="videoOutput"></div>
-</div>
-
-<script>
+  <!-- IMAGE PANEL -->
+  <div class="panel" id="image">
+   <textarea id="imagePrompt" rows="2" placeholder="Describe the image you want..."></textarea>
+   <div class="row">
+    <select id="imageModel"> <option value="flux">Flux</option> <option value="zimage">Zimage</option> </select>
+   </div>
+   <button class="action" id="imageBtn">Generate Image</button>
+   <div class="status" id="imageStatus"></div>
+   <div class="output" id="imageOutput"></div>
+  </div>
+  <!-- VIDEO PANEL -->
+  <div class="panel" id="video">
+   <textarea id="videoPrompt" rows="2" placeholder="Describe the video you want..."></textarea>
+   <div class="row">
+    <select id="videoModel"> <option value="seedance">Seedance</option> <option value="wan-fast">Wan-Fast</option> <option value="veo">Veo (alpha)</option> </select>
+   </div>
+   <button class="action" id="videoBtn">Generate Video</button>
+   <div class="status" id="videoStatus">Video generation can take a while — please be patient.</div>
+   <div class="output" id="videoOutput"></div>
+  </div>
+  <script>
   // Tab switching
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -198,7 +185,11 @@
         body: JSON.stringify({ messages: history }),
       });
       const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || "No response";
+      const reply =
+        data.choices?.[0]?.message?.content ||
+        data.error ||
+        data.response ||
+        (typeof data === "string" ? data : JSON.stringify(data));
       addMsg("ai", reply);
       history.push({ role: "assistant", content: reply });
       chatStatus.textContent = "";
@@ -263,6 +254,5 @@
     }
   });
 </script>
-
-</body>
-</html>
+ </body>
+  </html>
