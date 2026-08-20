@@ -11,6 +11,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 const POLLINATIONS_KEY = process.env.POLLINATIONS_API_KEY;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const BASE_URL = "https://gen.pollinations.ai";
 
 if (!POLLINATIONS_KEY) {
@@ -18,37 +19,38 @@ if (!POLLINATIONS_KEY) {
 }
 
 // ---------- CHAT ----------
-// Uses the simple GET endpoint (text.pollinations.ai/{prompt}) — a different
-// route from the OpenAI-style POST endpoint, avoids account/key association issues.
+// Uses Groq's free API (console.groq.com) — genuinely free, no billing surprises.
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages, model = "openai" } = req.body;
+    const { messages, model = "llama-3.3-70b-versatile" } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "messages array is required" });
     }
 
-    // Build a single prompt string from the conversation history
-    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
-    const conversationText = messages
-      .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
-      .join("\n");
+    if (!GROQ_API_KEY) {
+      return res.status(500).json({ error: "GROQ_API_KEY is not set on the server." });
+    }
 
-    const prompt = conversationText || lastUserMessage?.content || "";
-    const encodedPrompt = encodeURIComponent(prompt);
-    const url = `https://text.pollinations.ai/${encodedPrompt}?model=${model}`;
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({ model, messages }),
+    });
 
-    const response = await fetch(url);
     const rawText = await response.text();
-    console.log("Pollinations raw response:", rawText);
+    console.log("Groq raw response:", rawText);
 
     if (!response.ok) {
-      console.error("Pollinations chat API error:", response.status, rawText);
+      console.error("Groq chat API error:", response.status, rawText);
       return res.status(response.status).json({ error: rawText });
     }
 
-    // This endpoint returns plain text, not JSON
-    res.json({ choices: [{ message: { content: rawText } }] });
+    const data = JSON.parse(rawText);
+    res.json(data);
   } catch (err) {
     console.error("Chat error:", err);
     res.status(500).json({ error: "Chat generation failed: " + err.message });
