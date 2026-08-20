@@ -30,7 +30,7 @@ app.post("/api/chat", async (req, res) => {
     const response = await fetch("https://text.pollinations.ai/openai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model, messages, referrer: "second-brain-ai" }),
+      body: JSON.stringify({ model, messages }),
     });
 
     const rawText = await response.text();
