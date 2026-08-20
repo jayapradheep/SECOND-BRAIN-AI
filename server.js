@@ -22,7 +22,7 @@ if (!POLLINATIONS_KEY) {
 // Uses Groq's free API (console.groq.com) — genuinely free, no billing surprises.
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages, model = "llama-3.3-70b-versatile" } = req.body;
+    const { messages, model = "openai/gpt-oss-120b" } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "messages array is required" });
