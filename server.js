@@ -63,8 +63,8 @@ app.post("/api/chat", async (req, res) => {
 // - "flux" (default) uses the free, keyless Pollinations endpoint — unlimited, no key needed.
 // - "nvidia-qwen" / "nvidia-flux" use NVIDIA NIM (build.nvidia.com) — needs NVIDIA_API_KEY, rate-limited.
 const NVIDIA_IMAGE_MODELS = {
-  "nvidia-qwen": "qwen/qwen-image-2512",
-  "nvidia-flux": "black-forest-labs/flux.1-schnell",
+  "nvidia-qwen": "qwen/qwen-image",
+  "nvidia-flux": "black-forest-labs/flux_1-schnell",
 };
 
 app.post("/api/image", async (req, res) => {
