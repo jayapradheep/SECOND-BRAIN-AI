@@ -81,18 +81,15 @@ app.post("/api/image", async (req, res) => {
         return res.status(500).json({ error: "NVIDIA_API_KEY is not set on the server." });
       }
 
-      const response = await fetch("https://integrate.api.nvidia.com/v1/images/generations", {
+      const invokeUrl = `https://ai.api.nvidia.com/v1/genai/${NVIDIA_IMAGE_MODELS[model]}`;
+      const response = await fetch(invokeUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
           Authorization: `Bearer ${NVIDIA_API_KEY}`,
         },
-        body: JSON.stringify({
-          model: NVIDIA_IMAGE_MODELS[model],
-          prompt,
-          n: 1,
-          response_format: "b64_json",
-        }),
+        body: JSON.stringify({ prompt, mode: "base", seed: 0, steps: 4 }),
       });
 
       const rawText = await response.text();
@@ -104,9 +101,9 @@ app.post("/api/image", async (req, res) => {
       }
 
       const data = JSON.parse(rawText);
-      const b64 = data.data?.[0]?.b64_json;
+      const b64 = data.artifacts?.[0]?.base64 || data.image || data.data?.[0]?.b64_json;
       if (!b64) {
-        return res.status(500).json({ error: "NVIDIA response did not contain an image." });
+        return res.status(500).json({ error: "NVIDIA response did not contain an image: " + rawText.slice(0, 200) });
       }
 
       res.set("Content-Type", "image/jpeg");
