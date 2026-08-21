@@ -13,6 +13,7 @@ app.use(express.static("public"));
 const POLLINATIONS_KEY = process.env.POLLINATIONS_API_KEY;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const BASE_URL = "https://gen.pollinations.ai";
 
 if (!POLLINATIONS_KEY) {
@@ -61,55 +62,50 @@ app.post("/api/chat", async (req, res) => {
 // ---------- IMAGE ----------
 // Two providers:
 // - "flux" (default) uses the free, keyless Pollinations endpoint — unlimited, no key needed.
-// - "nvidia-qwen" / "nvidia-flux" use NVIDIA NIM (build.nvidia.com) — needs NVIDIA_API_KEY, rate-limited.
-const NVIDIA_IMAGE_MODELS = {
-  "nvidia-qwen": "qwen/qwen-image",
-  "nvidia-flux": "black-forest-labs/flux_1-schnell",
-};
-
+// - "openai" uses OpenAI's gpt-image-1 model — needs OPENAI_API_KEY, paid per image but reliable.
 app.post("/api/image", async (req, res) => {
   try {
-    const { prompt, model: rawModel = "flux", width = 1024, height = 1024 } = req.body;
+    const { prompt, model = "flux", width = 1024, height = 1024 } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: "prompt is required" });
     }
 
-    // Accept both short names ("qwen", "flux") and full names ("nvidia-qwen", "nvidia-flux")
-    const model = NVIDIA_IMAGE_MODELS[`nvidia-${rawModel}`] ? `nvidia-${rawModel}` : rawModel;
-
-    // --- NVIDIA NIM provider ---
-    if (NVIDIA_IMAGE_MODELS[model]) {
-      if (!NVIDIA_API_KEY) {
-        return res.status(500).json({ error: "NVIDIA_API_KEY is not set on the server." });
+    // --- OpenAI provider ---
+    if (model === "openai") {
+      if (!OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OPENAI_API_KEY is not set on the server." });
       }
 
-      const invokeUrl = `https://ai.api.nvidia.com/v1/genai/${NVIDIA_IMAGE_MODELS[model]}`;
-      const response = await fetch(invokeUrl, {
+      const response = await fetch("https://api.openai.com/v1/images/generations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${NVIDIA_API_KEY}`,
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
         },
-        body: JSON.stringify({ prompt, mode: "base", seed: 0, steps: 4 }),
+        body: JSON.stringify({
+          model: "gpt-image-1",
+          prompt,
+          size: "1024x1024",
+          n: 1,
+        }),
       });
 
       const rawText = await response.text();
-      console.log("NVIDIA image raw response (truncated):", rawText.slice(0, 300));
+      console.log("OpenAI image raw response (truncated):", rawText.slice(0, 300));
 
       if (!response.ok) {
-        console.error("NVIDIA image API error:", response.status, rawText);
+        console.error("OpenAI image API error:", response.status, rawText);
         return res.status(response.status).json({ error: rawText });
       }
 
       const data = JSON.parse(rawText);
-      const b64 = data.artifacts?.[0]?.base64 || data.image || data.data?.[0]?.b64_json;
+      const b64 = data.data?.[0]?.b64_json;
       if (!b64) {
-        return res.status(500).json({ error: "NVIDIA response did not contain an image: " + rawText.slice(0, 200) });
+        return res.status(500).json({ error: "OpenAI response did not contain an image: " + rawText.slice(0, 200) });
       }
 
-      res.set("Content-Type", "image/jpeg");
+      res.set("Content-Type", "image/png");
       res.send(Buffer.from(b64, "base64"));
       return;
     }
