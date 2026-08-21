@@ -12,6 +12,7 @@ app.use(express.static("public"));
 
 const POLLINATIONS_KEY = process.env.POLLINATIONS_API_KEY;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 const BASE_URL = "https://gen.pollinations.ai";
 
 if (!POLLINATIONS_KEY) {
@@ -58,7 +59,14 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // ---------- IMAGE ----------
-// Uses the free, keyless image endpoint (image.pollinations.ai) — Flux model, unlimited.
+// Two providers:
+// - "flux" (default) uses the free, keyless Pollinations endpoint — unlimited, no key needed.
+// - "nvidia-qwen" / "nvidia-flux" use NVIDIA NIM (build.nvidia.com) — needs NVIDIA_API_KEY, rate-limited.
+const NVIDIA_IMAGE_MODELS = {
+  "nvidia-qwen": "qwen/qwen-image-2512",
+  "nvidia-flux": "black-forest-labs/flux.1-schnell",
+};
+
 app.post("/api/image", async (req, res) => {
   try {
     const { prompt, model = "flux", width = 1024, height = 1024 } = req.body;
@@ -67,6 +75,46 @@ app.post("/api/image", async (req, res) => {
       return res.status(400).json({ error: "prompt is required" });
     }
 
+    // --- NVIDIA NIM provider ---
+    if (NVIDIA_IMAGE_MODELS[model]) {
+      if (!NVIDIA_API_KEY) {
+        return res.status(500).json({ error: "NVIDIA_API_KEY is not set on the server." });
+      }
+
+      const response = await fetch("https://integrate.api.nvidia.com/v1/images/generations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${NVIDIA_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: NVIDIA_IMAGE_MODELS[model],
+          prompt,
+          n: 1,
+          response_format: "b64_json",
+        }),
+      });
+
+      const rawText = await response.text();
+      console.log("NVIDIA image raw response (truncated):", rawText.slice(0, 300));
+
+      if (!response.ok) {
+        console.error("NVIDIA image API error:", response.status, rawText);
+        return res.status(response.status).json({ error: rawText });
+      }
+
+      const data = JSON.parse(rawText);
+      const b64 = data.data?.[0]?.b64_json;
+      if (!b64) {
+        return res.status(500).json({ error: "NVIDIA response did not contain an image." });
+      }
+
+      res.set("Content-Type", "image/jpeg");
+      res.send(Buffer.from(b64, "base64"));
+      return;
+    }
+
+    // --- Free Pollinations provider (default) ---
     const encodedPrompt = encodeURIComponent(prompt);
     const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=${model}&width=${width}&height=${height}&nologo=true`;
 
@@ -82,7 +130,7 @@ app.post("/api/image", async (req, res) => {
     res.send(Buffer.from(buffer));
   } catch (err) {
     console.error("Image error:", err);
-    res.status(500).json({ error: "Image generation failed" });
+    res.status(500).json({ error: "Image generation failed: " + err.message });
   }
 });
 
