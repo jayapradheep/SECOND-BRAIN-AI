@@ -69,11 +69,14 @@ const NVIDIA_IMAGE_MODELS = {
 
 app.post("/api/image", async (req, res) => {
   try {
-    const { prompt, model = "flux", width = 1024, height = 1024 } = req.body;
+    const { prompt, model: rawModel = "flux", width = 1024, height = 1024 } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: "prompt is required" });
     }
+
+    // Accept both short names ("qwen", "flux") and full names ("nvidia-qwen", "nvidia-flux")
+    const model = NVIDIA_IMAGE_MODELS[`nvidia-${rawModel}`] ? `nvidia-${rawModel}` : rawModel;
 
     // --- NVIDIA NIM provider ---
     if (NVIDIA_IMAGE_MODELS[model]) {
@@ -119,6 +122,7 @@ app.post("/api/image", async (req, res) => {
 
     if (!response.ok) {
       const errText = await response.text();
+      console.error("Pollinations image API error:", response.status, errText);
       return res.status(response.status).json({ error: errText });
     }
 
