@@ -3,148 +3,290 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SECOND BRAIN AI</title>
+  <title>Second Brain AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <style>
   :root {
-    --bg: #0f1115;
-    --panel: #171a21;
-    --accent: #f5c542;
-    --text: #e9e9ec;
-    --muted: #9a9ca3;
-    --border: #2a2d36;
+    --bg: #F9F6F1;
+    --surface: #FFFFFF;
+    --surface-2: #F0EAE0;
+    --text: #262220;
+    --muted: #85786C;
+    --accent: #D97757;
+    --accent-dark: #C05F3C;
+    --border: #E8E0D3;
+    --user-bubble: #D97757;
+    --user-text: #FFFFFF;
   }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: 'Segoe UI', system-ui, sans-serif;
+  html, body {
+    margin: 0; padding: 0; height: 100%;
     background: var(--bg);
     color: var(--text);
-    min-height: 100vh;
+    font-family: 'Inter', system-ui, sans-serif;
   }
-  header {
-    padding: 24px 20px 8px;
-    text-align: center;
-  }
-  header h1 { margin: 0; font-size: 1.6rem; letter-spacing: 0.5px; }
-  header p { color: var(--muted); margin: 6px 0 0; font-size: 0.9rem; }
+  h1, h2, .brand, .serif { font-family: 'Fraunces', Georgia, serif; }
 
-  .tabs {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin: 20px 0;
-    flex-wrap: wrap;
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar {
+    width: 260px; min-width: 260px;
+    background: var(--surface-2);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    transition: margin-left 0.25s ease;
   }
+  .sidebar.collapsed { margin-left: -260px; }
+  .sidebar-header {
+    padding: 18px 16px 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .brand { font-size: 1.15rem; font-weight: 600; color: var(--text); }
+  .new-chat-btn {
+    margin: 6px 16px 14px;
+    background: var(--accent);
+    color: #fff; border: none;
+    padding: 11px 14px; border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.92rem;
+    cursor: pointer; display: flex; align-items: center; gap: 8px;
+  }
+  .new-chat-btn:hover { background: var(--accent-dark); }
+  .history-label {
+    padding: 6px 16px; font-size: 0.72rem; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--muted); font-weight: 600;
+  }
+  .history-list { flex: 1; overflow-y: auto; padding: 0 8px; }
+  .history-item {
+    padding: 10px 10px; margin: 2px 0; border-radius: 8px;
+    font-size: 0.87rem; color: var(--text); cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .history-item:hover { background: var(--border); }
+  .history-item.active { background: var(--border); font-weight: 600; }
+  .history-empty { padding: 10px 16px; font-size: 0.82rem; color: var(--muted); }
+
+  /* ---------- MAIN ---------- */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .hamburger {
+    background: none; border: none; cursor: pointer;
+    display: flex; flex-direction: column; gap: 4px; padding: 6px;
+  }
+  .hamburger span { width: 20px; height: 2px; background: var(--text); border-radius: 2px; }
+  .topbar h1 { font-size: 1.2rem; margin: 0; font-weight: 500; }
+
+  .tabs { display: flex; gap: 6px; margin-left: auto; }
   .tab-btn {
-    background: var(--panel);
-    color: var(--text);
+    background: transparent; color: var(--muted);
     border: 1px solid var(--border);
-    padding: 10px 20px;
-    border-radius: 999px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.2s;
+    padding: 7px 16px; border-radius: 999px; cursor: pointer;
+    font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 500;
   }
-  .tab-btn.active {
-    background: var(--accent);
-    color: #1a1a1a;
-    border-color: var(--accent);
-    font-weight: 600;
+  .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .panel { flex: 1; display: none; min-height: 0; flex-direction: column; overflow: hidden; }
+  .panel.active { display: flex; }
+
+  /* ---------- CHAT ---------- */
+  .chat-scroll { flex: 1; overflow-y: auto; padding: 24px 20px; }
+  .chat-inner { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+  .empty-state {
+    max-width: 720px; margin: 60px auto; text-align: center; color: var(--muted);
+  }
+  .empty-state .serif { font-size: 1.6rem; color: var(--text); margin-bottom: 8px; }
+
+  .msg-row { display: flex; flex-direction: column; max-width: 82%; }
+  .msg-row.user { align-self: flex-end; align-items: flex-end; }
+  .msg-row.ai { align-self: flex-start; align-items: flex-start; }
+  .bubble { padding: 12px 16px; border-radius: 14px; line-height: 1.55; font-size: 0.96rem; white-space: pre-wrap; }
+  .msg-row.user .bubble { background: var(--user-bubble); color: var(--user-text); border-bottom-right-radius: 4px; }
+  .msg-row.ai .bubble { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+
+  .msg-actions { display: flex; gap: 4px; margin-top: 6px; }
+  .msg-actions button {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; padding: 5px 7px; border-radius: 6px;
+    display: flex; align-items: center; font-size: 0.78rem; gap: 4px;
+  }
+  .msg-actions button:hover { background: var(--surface-2); color: var(--text); }
+
+  .attachment-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 6px;
   }
 
-  .panel {
-    max-width: 700px;
-    margin: 0 auto 60px;
-    padding: 0 20px;
-    display: none;
+  /* ---------- INPUT BAR ---------- */
+  .input-bar { padding: 14px 20px 20px; }
+  .input-inner { max-width: 720px; margin: 0 auto; }
+  .attached-preview { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .attached-preview .attachment-chip button {
+    background: none; border: none; color: var(--muted); cursor: pointer; margin-left: 4px;
   }
-  .panel.active { display: block; }
-
-  textarea, input {
-    width: 100%;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 12px 14px;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    resize: vertical;
+  .input-box {
+    display: flex; align-items: flex-end; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 8px 8px 8px 14px;
   }
-  textarea:focus, input:focus { outline: 1px solid var(--accent); }
-
-  .row { display: flex; gap: 10px; margin-top: 10px; }
-  .row select { flex: 1; }
-
-  button.action {
-    margin-top: 14px;
-    background: var(--accent);
-    color: #1a1a1a;
-    border: none;
-    padding: 12px 22px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 0.95rem;
+  .input-box textarea {
+    flex: 1; border: none; outline: none; resize: none;
+    font-family: 'Inter', sans-serif; font-size: 0.95rem; background: transparent;
+    color: var(--text); max-height: 140px; padding: 8px 0;
   }
-  button.action:disabled { opacity: 0.6; cursor: not-allowed; }
-
-  .output {
-    margin-top: 20px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    min-height: 60px;
+  .icon-btn {
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
-  .output img, .output video { max-width: 100%; border-radius: 10px; display: block; }
+  .icon-btn:hover { background: var(--surface-2); color: var(--text); }
+  .icon-btn.recording { color: #fff; background: #E5484D; }
+  .send-btn {
+    background: var(--accent); color: #fff; border: none;
+    width: 36px; height: 36px; border-radius: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .send-btn:hover { background: var(--accent-dark); }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .hint { text-align: center; font-size: 0.75rem; color: var(--muted); margin-top: 8px; }
 
-  .chat-log { display: flex; flex-direction: column; gap: 10px; }
-  .msg { padding: 10px 14px; border-radius: 10px; max-width: 85%; line-height: 1.4; }
-  .msg.user { background: var(--accent); color: #1a1a1a; align-self: flex-end; }
-  .msg.ai { background: #23262f; align-self: flex-start; }
+  /* ---------- IMAGE / VIDEO PANELS ---------- */
+  .gen-panel { max-width: 640px; margin: 0 auto; padding: 28px 20px; width: 100%; overflow-y: auto; }
+  .gen-panel textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px; font-family: 'Inter', sans-serif;
+    font-size: 0.95rem; color: var(--text); resize: vertical;
+  }
+  .gen-row { display: flex; gap: 10px; margin-top: 10px; }
+  .gen-row select {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px; font-family: 'Inter', sans-serif; color: var(--text);
+  }
+  .gen-btn {
+    margin-top: 14px; background: var(--accent); color: #fff; border: none;
+    padding: 12px 22px; border-radius: 10px; font-weight: 600; cursor: pointer;
+  }
+  .gen-btn:hover { background: var(--accent-dark); }
+  .gen-status { color: var(--muted); font-size: 0.85rem; margin-top: 10px; }
+  .gen-output { margin-top: 18px; }
+  .gen-output img, .gen-output video { max-width: 100%; border-radius: 12px; border: 1px solid var(--border); }
+  .gen-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .gen-actions button {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+  }
+  .gen-actions button:hover { background: var(--surface-2); }
 
-  .status { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+
+  @media (max-width: 640px) {
+    .sidebar { position: fixed; z-index: 20; height: 100vh; }
+    .sidebar.collapsed { margin-left: -260px; }
+  }
 </style>
  </head>
  <body>
-  <header>
-   <h1>🧠 SECOND BRAIN AI</h1>
-   <p>Chat · Image · Video — your personal AI companion</p>
-  </header>
-  <div class="tabs">
-   <button class="tab-btn active" data-tab="chat">💬 Chat</button>
-   <button class="tab-btn" data-tab="image">🖼️ Image</button>
-   <button class="tab-btn" data-tab="video">🎬 Video</button>
-  </div>
-  <!-- CHAT PANEL -->
-  <div class="panel active" id="chat">
-   <div class="output chat-log" id="chatLog"></div>
-   <textarea id="chatInput" rows="2" placeholder="Type your message..."></textarea>
-   <button class="action" id="chatBtn">Send</button>
-   <div class="status" id="chatStatus"></div>
-  </div>
-  <!-- IMAGE PANEL -->
-  <div class="panel" id="image">
-   <textarea id="imagePrompt" rows="2" placeholder="Describe the image you want..."></textarea>
-   <div class="row">
-    <select id="imageModel"> <option value="flux">Flux</option> <option value="zimage">Zimage</option> </select>
+  <div class="app">
+   <!-- SIDEBAR -->
+   <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+     <span class="brand">🧠 Second Brain AI</span>
+    </div>
+    <button class="new-chat-btn" id="newChatBtn">
+     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 5v14M5 12h14" />
+     </svg>
+     New chat
+    </button>
+    <div class="history-label">History</div>
+    <div class="history-list" id="historyList"></div>
    </div>
-   <button class="action" id="imageBtn">Generate Image</button>
-   <div class="status" id="imageStatus"></div>
-   <div class="output" id="imageOutput"></div>
-  </div>
-  <!-- VIDEO PANEL -->
-  <div class="panel" id="video">
-   <textarea id="videoPrompt" rows="2" placeholder="Describe the video you want..."></textarea>
-   <div class="row">
-    <select id="videoModel"> <option value="seedance">Seedance</option> <option value="wan-fast">Wan-Fast</option> <option value="veo">Veo (alpha)</option> </select>
+   <!-- MAIN -->
+   <div class="main">
+    <div class="topbar">
+     <button class="hamburger" id="hamburgerBtn" title="Toggle sidebar"><span></span><span></span><span></span></button>
+     <h1 class="serif">Second Brain AI</h1>
+     <div class="tabs">
+      <button class="tab-btn active" data-tab="chat">Chat</button>
+      <button class="tab-btn" data-tab="image">Image</button>
+      <button class="tab-btn" data-tab="video">Video</button>
+     </div>
+    </div>
+    <!-- CHAT PANEL -->
+    <div class="panel active" id="chat">
+     <div class="chat-scroll" id="chatScroll">
+      <div class="chat-inner" id="chatInner">
+       <div class="empty-state" id="emptyState">
+        <div class="serif">What's on your mind?</div>
+        <div>Ask anything, attach a file, or use your voice.</div>
+       </div>
+      </div>
+     </div>
+     <div class="input-bar">
+      <div class="input-inner">
+       <div class="attached-preview" id="attachedPreview"></div>
+       <div class="input-box">
+        <button class="icon-btn" id="attachBtn" title="Attach file">
+         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.44 11.05l-9.19 9.19a5 5 0 01-7.07-7.07l9.19-9.19a3.5 3.5 0 014.95 4.95l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+         </svg>
+        </button>
+        <input type="file" id="fileInput" style="display:none" multiple> <textarea id="chatInput" rows="1" placeholder="Type your message..."></textarea>
+        <button class="icon-btn" id="micBtn" title="Voice input">
+         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" /><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+         </svg>
+        </button>
+        <button class="send-btn" id="sendBtn" title="Send">
+         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+         </svg>
+        </button>
+       </div>
+       <div class="hint">Second Brain AI can make mistakes. Check important info.</div>
+      </div>
+     </div>
+    </div>
+    <!-- IMAGE PANEL -->
+    <div class="panel" id="image">
+     <div class="gen-panel">
+      <textarea id="imagePrompt" rows="2" placeholder="Describe the image you want..."></textarea>
+      <div class="gen-row">
+       <select id="imageModel"> <option value="flux">Flux (free, unlimited)</option> <option value="zimage">Zimage (free, unlimited)</option> <option value="nvidia-qwen">Qwen-Image (NVIDIA)</option> <option value="nvidia-flux">Flux Schnell (NVIDIA)</option> </select>
+      </div>
+      <button class="gen-btn" id="imageBtn">Generate Image</button>
+      <div class="gen-status" id="imageStatus"></div>
+      <div class="gen-output" id="imageOutput"></div>
+     </div>
+    </div>
+    <!-- VIDEO PANEL -->
+    <div class="panel" id="video">
+     <div class="gen-panel">
+      <textarea id="videoPrompt" rows="2" placeholder="Describe the video you want..."></textarea>
+      <div class="gen-row">
+       <select id="videoModel"> <option value="seedance">Seedance</option> <option value="wan-fast">Wan-Fast</option> <option value="veo">Veo (alpha)</option> </select>
+      </div>
+      <button class="gen-btn" id="videoBtn">Generate Video</button>
+      <div class="gen-status" id="videoStatus">Video generation can take a while.</div>
+      <div class="gen-output" id="videoOutput"></div>
+     </div>
+    </div>
    </div>
-   <button class="action" id="videoBtn">Generate Video</button>
-   <div class="status" id="videoStatus">Video generation can take a while — please be patient.</div>
-   <div class="output" id="videoOutput"></div>
   </div>
   <script>
-  // Tab switching
+  /* ============ SIDEBAR ============ */
+  const sidebar = document.getElementById("sidebar");
+  document.getElementById("hamburgerBtn").addEventListener("click", () => {
+    sidebar.classList.toggle("collapsed");
+  });
+
+  /* ============ TABS ============ */
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -154,53 +296,274 @@
     });
   });
 
-  // ---------- CHAT ----------
-  const chatLog = document.getElementById("chatLog");
-  const chatInput = document.getElementById("chatInput");
-  const chatBtn = document.getElementById("chatBtn");
-  const chatStatus = document.getElementById("chatStatus");
-  let history = [];
+  /* ============ CHAT HISTORY (localStorage) ============ */
+  const STORAGE_KEY = "sba_chats_v1";
+  let chats = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  let currentChatId = null;
+  let history = []; // messages for the active chat
 
-  function addMsg(role, text) {
-    const div = document.createElement("div");
-    div.className = "msg " + (role === "user" ? "user" : "ai");
-    div.textContent = text;
-    chatLog.appendChild(div);
-    chatLog.scrollTop = chatLog.scrollHeight;
+  function saveChats() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
   }
 
-  chatBtn.addEventListener("click", async () => {
+  function renderHistoryList() {
+    const list = document.getElementById("historyList");
+    if (chats.length === 0) {
+      list.innerHTML = '<div class="history-empty">No conversations yet</div>';
+      return;
+    }
+    list.innerHTML = "";
+    [...chats].reverse().forEach(chat => {
+      const div = document.createElement("div");
+      div.className = "history-item" + (chat.id === currentChatId ? " active" : "");
+      div.textContent = chat.title || "New chat";
+      div.addEventListener("click", () => loadChat(chat.id));
+      list.appendChild(div);
+    });
+  }
+
+  function loadChat(id) {
+    const chat = chats.find(c => c.id === id);
+    if (!chat) return;
+    currentChatId = id;
+    history = [...chat.messages];
+    renderChatMessages();
+    renderHistoryList();
+  }
+
+  function startNewChat() {
+    currentChatId = null;
+    history = [];
+    renderChatMessages();
+    renderHistoryList();
+  }
+
+  function persistCurrentChat() {
+    if (history.length === 0) return;
+    if (!currentChatId) {
+      currentChatId = "c" + Date.now();
+      const title = history[0].content.slice(0, 40) || "New chat";
+      chats.push({ id: currentChatId, title, messages: history });
+    } else {
+      const chat = chats.find(c => c.id === currentChatId);
+      if (chat) chat.messages = history;
+    }
+    saveChats();
+    renderHistoryList();
+  }
+
+  document.getElementById("newChatBtn").addEventListener("click", startNewChat);
+
+  /* ============ CHAT RENDERING ============ */
+  const chatInner = document.getElementById("chatInner");
+  const chatScroll = document.getElementById("chatScroll");
+
+  function renderChatMessages() {
+    chatInner.innerHTML = "";
+    if (history.length === 0) {
+      chatInner.innerHTML = `<div class="empty-state" id="emptyState">
+        <div class="serif">What's on your mind?</div>
+        <div>Ask anything, attach a file, or use your voice.</div>
+      </div>`;
+      return;
+    }
+    history.forEach(msg => addMsgToDOM(msg.role, msg.content, msg.attachments));
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+  }
+
+  function addMsgToDOM(role, text, attachments) {
+    const emptyState = document.getElementById("emptyState");
+    if (emptyState) emptyState.remove();
+
+    const row = document.createElement("div");
+    row.className = "msg-row " + (role === "user" ? "user" : "ai");
+
+    if (attachments && attachments.length) {
+      attachments.forEach(a => {
+        const chip = document.createElement("div");
+        chip.className = "attachment-chip";
+        chip.textContent = "📎 " + a.name;
+        row.appendChild(chip);
+      });
+    }
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = text;
+    row.appendChild(bubble);
+
+    if (role === "ai") {
+      const actions = document.createElement("div");
+      actions.className = "msg-actions";
+      actions.innerHTML = `
+        <button class="copy-btn" title="Copy">📋 Copy</button>
+        <button class="download-btn" title="Download">⬇️ Download</button>
+        <button class="listen-btn" title="Listen">🔊 Listen</button>
+      `;
+      actions.querySelector(".copy-btn").addEventListener("click", () => {
+        navigator.clipboard.writeText(text);
+        actions.querySelector(".copy-btn").textContent = "✅ Copied";
+        setTimeout(() => actions.querySelector(".copy-btn").textContent = "📋 Copy", 1500);
+      });
+      actions.querySelector(".download-btn").addEventListener("click", () => {
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "response.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+      actions.querySelector(".listen-btn").addEventListener("click", () => {
+        if ("speechSynthesis" in window) {
+          speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(text);
+          speechSynthesis.speak(utter);
+        }
+      });
+      row.appendChild(actions);
+    }
+
+    chatInner.appendChild(row);
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+  }
+
+  /* ============ FILE ATTACHMENTS ============ */
+  let pendingAttachments = [];
+  const fileInput = document.getElementById("fileInput");
+  const attachedPreview = document.getElementById("attachedPreview");
+
+  document.getElementById("attachBtn").addEventListener("click", () => fileInput.click());
+
+  fileInput.addEventListener("change", async () => {
+    for (const file of fileInput.files) {
+      const attachment = { name: file.name, type: file.type, size: file.size, textContent: null };
+      // Read plain-text-like files so their content can be included in the prompt
+      const textLike = /\.(txt|md|csv|json|html|htm|xml|js|css)$/i.test(file.name);
+      if (textLike) {
+        attachment.textContent = await file.text();
+      }
+      pendingAttachments.push(attachment);
+    }
+    fileInput.value = "";
+    renderAttachedPreview();
+  });
+
+  function renderAttachedPreview() {
+    attachedPreview.innerHTML = "";
+    pendingAttachments.forEach((a, idx) => {
+      const chip = document.createElement("div");
+      chip.className = "attachment-chip";
+      chip.innerHTML = `📎 ${a.name} <button data-idx="${idx}">✕</button>`;
+      chip.querySelector("button").addEventListener("click", () => {
+        pendingAttachments.splice(idx, 1);
+        renderAttachedPreview();
+      });
+      attachedPreview.appendChild(chip);
+    });
+  }
+
+  /* ============ VOICE INPUT ============ */
+  const micBtn = document.getElementById("micBtn");
+  const chatInput = document.getElementById("chatInput");
+  let recognition = null;
+  let isRecording = false;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      chatInput.value = (chatInput.value ? chatInput.value + " " : "") + transcript;
+    };
+    recognition.onend = () => {
+      isRecording = false;
+      micBtn.classList.remove("recording");
+    };
+    recognition.onerror = () => {
+      isRecording = false;
+      micBtn.classList.remove("recording");
+    };
+
+    micBtn.addEventListener("click", () => {
+      if (isRecording) {
+        recognition.stop();
+      } else {
+        recognition.start();
+        isRecording = true;
+        micBtn.classList.add("recording");
+      }
+    });
+  } else {
+    micBtn.style.display = "none";
+  }
+
+  /* ============ SEND MESSAGE ============ */
+  const sendBtn = document.getElementById("sendBtn");
+
+  chatInput.addEventListener("input", () => {
+    chatInput.style.height = "auto";
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + "px";
+  });
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+
+  sendBtn.addEventListener("click", async () => {
     const text = chatInput.value.trim();
-    if (!text) return;
-    addMsg("user", text);
-    history.push({ role: "user", content: text });
+    if (!text && pendingAttachments.length === 0) return;
+
+    // Build message content, folding in any readable text-file attachments
+    let fullContent = text;
+    const fileNotes = pendingAttachments
+      .filter(a => a.textContent)
+      .map(a => `\n\n[Attached file: ${a.name}]\n${a.textContent.slice(0, 3000)}`)
+      .join("");
+    const nonTextFiles = pendingAttachments.filter(a => !a.textContent);
+    if (nonTextFiles.length) {
+      fullContent += `\n\n[Attached files not readable as text: ${nonTextFiles.map(a => a.name).join(", ")}]`;
+    }
+    fullContent += fileNotes;
+
+    const attachmentsForDisplay = pendingAttachments.map(a => ({ name: a.name }));
+
+    history.push({ role: "user", content: fullContent, attachments: attachmentsForDisplay });
+    addMsgToDOM("user", text || "(file attached)", attachmentsForDisplay);
+
     chatInput.value = "";
-    chatBtn.disabled = true;
-    chatStatus.textContent = "Thinking...";
+    chatInput.style.height = "auto";
+    pendingAttachments = [];
+    renderAttachedPreview();
+    sendBtn.disabled = true;
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history.map(m => ({ role: m.role, content: m.content })) }),
       });
       const data = await res.json();
-      const reply =
-        data.choices?.[0]?.message?.content ||
-        data.error ||
-        data.response ||
-        (typeof data === "string" ? data : JSON.stringify(data));
-      addMsg("ai", reply);
+      const reply = data.choices?.[0]?.message?.content || data.error || "No response";
       history.push({ role: "assistant", content: reply });
-      chatStatus.textContent = "";
+      addMsgToDOM("ai", reply);
+      persistCurrentChat();
     } catch (err) {
-      chatStatus.textContent = "Error: " + err.message;
+      addMsgToDOM("ai", "Error: " + err.message);
     } finally {
-      chatBtn.disabled = false;
+      sendBtn.disabled = false;
     }
   });
 
-  // ---------- IMAGE ----------
+  renderHistoryList();
+
+  /* ============ IMAGE ============ */
   document.getElementById("imageBtn").addEventListener("click", async () => {
     const prompt = document.getElementById("imagePrompt").value.trim();
     const model = document.getElementById("imageModel").value;
@@ -220,14 +583,25 @@
       if (!res.ok) throw new Error("Generation failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      output.innerHTML = `<img src="${url}" alt="${prompt}" />`;
+      output.innerHTML = `<img src="${url}" alt="${prompt}" />
+        <div class="gen-actions">
+          <button id="imgDownload">⬇️ Download</button>
+          <button id="imgCopy">📋 Copy link</button>
+        </div>`;
+      document.getElementById("imgDownload").addEventListener("click", () => {
+        const a = document.createElement("a");
+        a.href = url; a.download = "image.jpg"; a.click();
+      });
+      document.getElementById("imgCopy").addEventListener("click", () => {
+        navigator.clipboard.writeText(url);
+      });
       status.textContent = "Done.";
     } catch (err) {
       status.textContent = "Error: " + err.message;
     }
   });
 
-  // ---------- VIDEO ----------
+  /* ============ VIDEO ============ */
   document.getElementById("videoBtn").addEventListener("click", async () => {
     const prompt = document.getElementById("videoPrompt").value.trim();
     const model = document.getElementById("videoModel").value;
@@ -247,7 +621,14 @@
       if (!res.ok) throw new Error("Generation failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      output.innerHTML = `<video src="${url}" controls autoplay loop></video>`;
+      output.innerHTML = `<video src="${url}" controls autoplay loop></video>
+        <div class="gen-actions">
+          <button id="vidDownload">⬇️ Download</button>
+        </div>`;
+      document.getElementById("vidDownload").addEventListener("click", () => {
+        const a = document.createElement("a");
+        a.href = url; a.download = "video.mp4"; a.click();
+      });
       status.textContent = "Done.";
     } catch (err) {
       status.textContent = "Error: " + err.message;
@@ -255,4 +636,4 @@
   });
 </script>
  </body>
-  </html>
+ </html>
